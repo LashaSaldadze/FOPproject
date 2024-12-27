@@ -1,0 +1,28 @@
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.ArrayList;
+
+public class BasicInterpreter {
+    private static final Map<String, Integer> variables = new HashMap<>();
+
+    public static void main(String[] args) {
+        // We added scanner to read the input from the user through the console
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter BASIC code line by line. Type \"FINISH\" in a new line to finish:");
+
+        // We created an empty ArrayList of strings which would accept the codes written by the user as input
+        List<String> codeLines = new ArrayList<>();
+        while (true) {
+            String line = scanner.nextLine().trim();
+            //The compiler keeps reading until the user inputs "FINISH"
+            if (line.equals("FINISH")) {
+                break;
+            }
+            //All the lines until "FINISH" are added to the codeLines Arraylist
+            codeLines.add(line);
+
+        }
+    }
+}
