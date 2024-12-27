@@ -1,0 +1,60 @@
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.ArrayList;
+
+public class BasicInterpreter {
+    private static final Map<String, Integer> variables = new HashMap<>();
+    //This is an addition and continuation of the code by Lasha
+    public static void main(String[] args) {
+        // We added scanner to read the input from the user through the console
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter BASIC code line by line. Type \"FINISH\" in a new line to finish:");
+
+        // We created an empty ArrayList of strings which would accept the codes written by the user as input
+        List<String> codeLines = new ArrayList<>();
+        while (true) {
+            String line = scanner.nextLine().trim();
+            //The compiler keeps reading until the user inputs "FINISH"
+            if (line.equals("FINISH")) {
+                break;
+            }
+            //All the lines until "FINISH" are added to the codeLines Arraylist
+            codeLines.add(line);
+
+        }
+
+        // We added the method cleanedCode in order to get rid of the numbers in front of the code lines
+        try {
+            List<String> cleanedCode = cleanedCode(codeLines);
+            parseAndExecute(cleanedCode);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // This method is used to clean the code by removing line numbers and trimming unnecessary spaces
+    public static List<String> cleanedCode(List<String> codeLines) {
+        List<String> cleanedCode = new ArrayList<>();
+
+        for (String line : codeLines) {
+            // Going through the lines with the for-each loop, the line.trim() method is used to trim the code
+            // And with the help of indexOf() method we find the the index of the first space
+            String trimmedLine = line.trim();
+            int firstSpaceIndex = trimmedLine.indexOf(" "); // Find the first space
+            if (firstSpaceIndex != -1 && Character.isDigit(trimmedLine.charAt(0))) {
+                // Remove first space and the the part before it if it starts with digits
+                cleanedCode.add(trimmedLine.substring(firstSpaceIndex + 1).trim());
+            } else {
+                // If no space or no leading digits, add the line as is
+                cleanedCode.add(trimmedLine);
+            }
+        }
+        return cleanedCode;
+    }
+    // The parseExecute method is supposed to catch the keywords, but it's not been implemented yet
+    private static void parseAndExecute(List<String> cleanedCode) {
+
+    }
+}
