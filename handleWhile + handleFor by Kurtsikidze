@@ -1,0 +1,71 @@
+public class BasicInterpreter {
+/* 
+BUNCH OF CODE HERE
+*/
+
+// This is the placeholder method for handling "WHILE" loops
+    public static void handleWhile(String line) throws Exception {
+        //First extract condition and loop body from the cleaned code
+        String whileCondition = line.substring(line.indexOf("WHILE") + 5).trim();
+
+        List<String> loopBody = new ArrayList<>();
+        while (!cleanedCode.isEmpty()) {
+            String loopLine = cleanedCode.remove(0).trim(); //This part should remove loopBody's contents and add them to loppLine, but since this modifies cleanedCode globally it's returning error as of yet
+            if (loopLine.startsWith("WEND")) {
+                break;
+            }
+            loopBody.add(loopLine);
+        }
+
+        // Execute the loop as long as the condition is true
+        while (evaluateCondition(condition)) {
+            parseAndExecute(loopBody);
+        }
+    }
+
+    // This is the placeholder method for handling "FOR" loops
+    private static void handleFor(String line) throws Exception {
+        // First extract loop parameters from the FOR statement
+        String[] parts = line.substring(line.indexOf("FOR") + 3).trim().split("TO");
+        String[] loopVarParts = parts[0].trim().split("=");
+
+        String variable = loopVarParts[0].trim();
+        int start = Integer.parseInt(loopVarParts[1].trim());
+        int end = Integer.parseInt(parts[1].trim());
+        int step = 1; // Default step
+
+        // Check for optional STEP keyword
+        if (line.contains("STEP")) {
+            String[] stepParts = line.split("STEP");
+            step = Integer.parseInt(stepParts[1].trim());
+        }
+
+        variables.put(variable, start);
+
+        // Execute loop body for each iteration
+        List<String> loopBody = new ArrayList<>();
+        while (!cleanedCode.isEmpty()) {   //This part should remove loopBody's contents and add them to loppLine, but since this modifies cleanedCode globally it's returning error as of yet
+            String loopLine = cleanedCode.remove(0).trim();
+            if (loopLine.startsWith("NEXT")) {
+                break;
+            }
+            loopBody.add(loopLine);
+        }
+
+        for (int i = start; (step > 0 ? i <= end : i >= end); i += step) {
+            variables.put(variable, i);
+            parseAndExecute(loopBody);
+        }
+
+        // Remove the loop variable after the loop ends
+        variables.remove(variable);
+    }
+
+/*
+
+BUNCH OF CODE HERE
+
+*/
+
+
+}
