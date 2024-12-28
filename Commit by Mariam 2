@@ -1,0 +1,177 @@
+import java.util.*;
+
+public class BasicInterpreter {
+    private static final Map<String, Integer> variables = new HashMap<>();
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter BASIC code line by line. Type \"FINISH\" in a new line to finish:");
+
+        List<String> codeLines = new ArrayList<>();
+        while (true) {
+            String line = scanner.nextLine().trim();
+            if (line.equals("FINISH")) {
+                break;
+            }
+            codeLines.add(line);
+        }
+
+        try {
+            List<String> cleanedCode = cleanedCode(codeLines);
+            parseAndExecute(cleanedCode);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    public static List<String> cleanedCode(List<String> codeLines) {
+        List<String> cleanedCode = new ArrayList<>();
+
+        for (String line : codeLines) {
+            String trimmedLine = line.trim();
+            int firstSpaceIndex = trimmedLine.indexOf(" ");
+            if (firstSpaceIndex != -1 && Character.isDigit(trimmedLine.charAt(0))) {
+                cleanedCode.add(trimmedLine.substring(firstSpaceIndex + 1).trim());
+            } else {
+                cleanedCode.add(trimmedLine);
+            }
+        }
+        return cleanedCode;
+    }
+
+    private static void parseAndExecute(List<String> cleanedCode) throws Exception {
+        for (String line : cleanedCode) {
+            line = line.trim();
+
+            if (line.startsWith("PRINT")) {
+                handlePrint(line);
+            } else if (line.contains("=") && !line.contains("FOR")) {
+                handleAssignment(line);
+            } else if (line.startsWith("INPUT")) {
+                handleInput(line);
+            } else if (line.startsWith("IF") || line.startsWith("ELSE") || line.startsWith("END")) {
+                handleIf(line);
+            } else if (line.startsWith("NEXT")) {
+                handleNext(line);
+            } else if (line.startsWith("WHILE") || line.startsWith("WEND")) {
+                handleWhile(line);
+            } else if (line.startsWith("FOR")) {
+                handleFor(line);
+            } else {
+                throw new Exception("Unsupported or invalid statement: " + line);
+            }
+        }
+    }
+
+    private static boolean evaluateCondition(String condition) throws Exception {
+        String[] parts;
+        if (condition.contains("<>")) {
+            parts = condition.split("<>");
+            return getVariableValue(parts[0]) != getVariableValue(parts[1]);
+        } else if (condition.contains(">")) {
+            parts = condition.split(">");
+            return getVariableValue(parts[0]) > getVariableValue(parts[1]);
+        } else if (condition.contains("<")) {
+            parts = condition.split("<");
+            return getVariableValue(parts[0]) < getVariableValue(parts[1]);
+        } else if (condition.contains("=>")) {
+            parts = condition.split("=>");
+            return getVariableValue(parts[0]) >= getVariableValue(parts[1]);
+        } else if (condition.contains("=<")) {
+            parts = condition.split("=<");
+            return getVariableValue(parts[0]) <= getVariableValue(parts[1]);
+        } else if (condition.contains("=")) {
+            parts = condition.split("=");
+            return getVariableValue(parts[0]) == getVariableValue(parts[1]);
+        } else {
+            throw new Exception("Unsupported condition: " + condition);
+        }
+    }
+
+    private static int getVariableValue(String variable) throws Exception {
+        variable = variable.trim();
+        if (variables.containsKey(variable)) {
+            return variables.get(variable);
+        } else {
+            try {
+                return Integer.parseInt(variable);
+            } catch (NumberFormatException e) {
+                throw new Exception("Unknown variable or invalid number: " + variable);
+            }
+        }
+    }
+
+    private static void handlePrint(String line) {
+        String toPrint = line.substring(6).trim();
+        if (variables.containsKey(toPrint)) {
+            System.out.println(variables.get(toPrint));
+        } else {
+            System.out.println(toPrint.replaceAll("\"", ""));
+        }
+    }
+
+    private static void handleAssignment(String line) {
+        String[] parts = line.split("=");
+        String variable = parts[0].trim();
+        try {
+            int value = (int) evaluateArithmeticCondition(parts[1].trim());
+            variables.put(variable, value);
+        } catch (Exception e) {
+            System.out.println("Error in assignment: " + e.getMessage());
+        }
+    }
+
+    private static void handleInput(String line) {
+        String variable = line.substring(6).trim();
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter value for " + variable + ": ");
+        try {
+            int value = Integer.parseInt(scanner.nextLine().trim());
+            variables.put(variable, value);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter an integer.");
+        }
+    }
+
+    private static void handleIf(String line) throws Exception {
+        if (line.contains("THEN")) {
+            String[] parts = line.split("THEN");
+            if (evaluateCondition(parts[0].substring(2).trim())) {
+                parseAndExecute(Collections.singletonList(parts[1].trim()));
+            }
+        } else if (line.startsWith("END IF")) {
+            // End IF logic can be skipped for now as we handle line-by-line execution
+        }
+    }
+
+    private static void handleNext(String line) {
+        // Placeholder: To implement loop iteration
+    }
+
+    private static void handleWhile(String line) {
+        // Placeholder: To implement WHILE loop logic
+    }
+
+    private static void handleFor(String line) {
+        // Placeholder: To implement FOR loop logic
+    }
+
+    private static double evaluateArithmeticCondition(String condition) throws Exception {
+        String[] parts;
+        if (condition.contains("+")) {
+            parts = condition.split("\\+");
+            return getVariableValue(parts[0]) + getVariableValue(parts[1]);
+        } else if (condition.contains("-")) {
+            parts = condition.split("-");
+            return getVariableValue(parts[0]) - getVariableValue(parts[1]);
+        } else if (condition.contains("*")) {
+            parts = condition.split("\\*");
+            return getVariableValue(parts[0]) * getVariableValue(parts[1]);
+        } else if (condition.contains("/")) {
+            parts = condition.split("/");
+            return getVariableValue(parts[0]) / getVariableValue(parts[1]);
+        } else {
+            throw new Exception("Unsupported arithmetic condition: " + condition);
+        }
+    }
+}
