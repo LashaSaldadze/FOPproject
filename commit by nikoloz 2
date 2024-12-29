@@ -1,0 +1,95 @@
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.ArrayList;
+
+public class BasicInterpreter {
+    private static final Map<String, Integer> variables = new HashMap<>();
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter BASIC code line by line. Type \"FINISH\" in a new line to finish:");
+
+        List<String> codeLines = new ArrayList<>();
+        while (true) {
+            String line = scanner.nextLine().trim();
+            if (line.equals("FINISH")) {
+                break;
+            }
+            codeLines.add(line);
+        }
+
+        try {
+            List<String> cleanedCode = cleanedCode(codeLines);
+            parseAndExecute(cleanedCode, scanner);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    public static List<String> cleanedCode(List<String> codeLines) {
+        List<String> cleanedCode = new ArrayList<>();
+
+        for (String line : codeLines) {
+            String trimmedLine = line.trim();
+            int firstSpaceIndex = trimmedLine.indexOf(" ");
+            if (firstSpaceIndex != -1 && Character.isDigit(trimmedLine.charAt(0))) {
+                cleanedCode.add(trimmedLine.substring(firstSpaceIndex + 1).trim());
+            } else {
+                cleanedCode.add(trimmedLine);
+            }
+        }
+        return cleanedCode;
+    }
+
+    private static void parseAndExecute(List<String> cleanedCode, Scanner scanner) {
+        for (String line : cleanedCode) {
+            if (line.startsWith("INPUT")) {
+                handleInput(line, scanner);
+            } else if (line.contains("=")) {
+                handleAssignment(line);
+            } else {
+                System.out.println("Unknown statement: " + line);
+            }
+        }
+    }
+
+    private static void handleAssignment(String line) {
+        String[] parts = line.split("=");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid assignment statement: " + line);
+        }
+        
+        String varName = parts[0].trim();
+        String valueStr = parts[1].trim();
+        int value = evaluateExpression(valueStr);
+        
+        variables.put(varName, value);
+        System.out.println("Assigned " + value + " to " + varName);
+    }
+
+    private static int evaluateExpression(String expr) {
+        try {
+            return Integer.parseInt(expr);
+        } catch (NumberFormatException e) {
+            if (variables.containsKey(expr)) {
+                return variables.get(expr);
+            }
+            throw new IllegalArgumentException("Invalid expression: " + expr);
+        }
+    }
+
+    private static void handleInput(String line, Scanner scanner) {
+        String[] parts = line.split(" ");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid INPUT statement: " + line);
+        }
+
+        String varName = parts[1].trim();
+        System.out.print("Enter value for " + varName + ": ");
+        int inputValue = scanner.nextInt();
+        variables.put(varName, inputValue);
+        System.out.println("Assigned " + inputValue + " to " + varName);
+    }
+}
