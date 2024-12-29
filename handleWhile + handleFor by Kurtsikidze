@@ -1,23 +1,29 @@
 public class BasicInterpreter {
-/* 
-BUNCH OF CODE HERE
-*/
-
-// This is the placeholder method for handling "WHILE" loops
-    public static void handleWhile(String line) throws Exception {
-        //First extract condition and loop body from the cleaned code
-        String whileCondition = line.substring(line.indexOf("WHILE") + 5).trim();
-
+    //OTHER CODE HERE
+    // This is the placeholder method for handling "WHILE" loops
+    private static void handleWhile(String line) throws Exception {
+        String condition = line.substring(line.indexOf("WHILE") + 5).trim();
         List<String> loopBody = new ArrayList<>();
+        int nestedLevel = 0;
+
         while (!cleanedCode.isEmpty()) {
-            String loopLine = cleanedCode.remove(0).trim(); //This part should remove loopBody's contents and add them to loppLine, but since this modifies cleanedCode globally it's returning error as of yet
-            if (loopLine.startsWith("WEND")) {
-                break;
+            String loopLine = cleanedCode.remove(0).trim();
+            if (loopLine.startsWith("WHILE")) {
+                nestedLevel++;
+            } else if (loopLine.startsWith("WEND")) {
+                if (nestedLevel == 0) {
+                    break; // Matching WEND found
+                } else {
+                    nestedLevel--; // Closing an inner loop
+                }
             }
             loopBody.add(loopLine);
         }
 
-        // Execute the loop as long as the condition is true
+        if (nestedLevel > 0) {
+            throw new Exception("Unmatched WHILE/WEND detected.");
+        }
+
         while (evaluateCondition(condition)) {
             parseAndExecute(loopBody);
         }
@@ -44,7 +50,7 @@ BUNCH OF CODE HERE
 
         // Execute loop body for each iteration
         List<String> loopBody = new ArrayList<>();
-        while (!cleanedCode.isEmpty()) {   //This part should remove loopBody's contents and add them to loppLine, but since this modifies cleanedCode globally it's returning error as of yet
+        while (!cleanedCode.isEmpty()) {
             String loopLine = cleanedCode.remove(0).trim();
             if (loopLine.startsWith("NEXT")) {
                 break;
@@ -60,12 +66,5 @@ BUNCH OF CODE HERE
         // Remove the loop variable after the loop ends
         variables.remove(variable);
     }
-
-/*
-
-BUNCH OF CODE HERE
-
-*/
-
-
+//OTHER CODE HERE
 }
