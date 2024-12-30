@@ -1,0 +1,91 @@
+//This method was added to get the value of a variable or parse an integer directly
+    private static Double getVariableValue(String variable) throws Exception {
+        // The trim method removes extra unnecessary spaces from the name or the value
+        variable = variable.trim();
+        if (variables.containsKey(variable)) {
+            // This part of the code means that if the variable exists in the map, return its value
+            return variables.get(variable);
+        } else {
+            try { // THis part tries to parse the variable as an integer if it's not in the map
+                return Double.parseDouble(variable);
+            } catch (NumberFormatException e) {
+                // This part throws an exception if the variable is not in the map nor is it a valid number
+                throw new Exception("Unknown variable or invalid number: " + variable);
+            }
+        }
+    }
+
+    // This is the placeholder method for handling "PRINT" statements
+    private static void handlePrint(String line) throws Exception {
+        String toPrint = line.substring(6).trim();
+        try {
+            if (variables.containsKey(toPrint)) {
+                System.out.println(variables.get(toPrint));
+            } else {
+                double result = evaluateArithmeticCondition(toPrint);
+                System.out.println(result);
+            }
+        } catch (Exception e) {
+            System.out.println("Error in Print statement: " + e.getMessage());
+        }
+    }
+    // This is the placeholder method for handling variable assignments
+    private static void handleAssignment(String line) throws Exception {
+        // Split the assignment statement into variable and value
+        String[] parts = line.split("=", 2);
+        if (parts.length != 2) {
+            throw new Exception("Invalid assignment statement: " + line);
+        }
+
+        // Extract the variable name and trim unnecessary spaces
+        String variable = parts[0].trim();
+
+        // Evaluate the right-hand side (value or expression)
+        double value = evaluateArithmeticCondition(parts[1].trim());
+
+        // Store the result in the variables map
+        variables.put(variable, value);
+    }
+    // This is the placeholder method for handling "IF" statements
+    private static void handleIf(String line, List<String> cleanedCode) throws Exception {
+        // The indexOfThen indicates the index of "THEN" keyword in the IF statement in order to to separate the condition and the action
+        int indexOfThen = line.indexOf("THEN");
+        // If the "THEN" keyword is missing, the statement is invalid
+        if (indexOfThen == -1) {
+            throw new Exception("Invalid If statement: " + line);
+        }
+        // This part extracts the condition (between "IF" and "THEN")
+        String condition = line.substring(2, indexOfThen).trim();
+        List<String> thenBlock = new ArrayList<>();
+        List<String> elseBlock = new ArrayList<>();
+        
+        boolean elseExists = false;
+        boolean foundEndIf = false;
+
+        // Collect lines for THEN and ELSE blocks
+        int currentIndex = cleanedCode.indexOf(line);
+        for (int i = currentIndex + 1; i < cleanedCode.size(); i++) {
+            String nextLine = cleanedCode.get(i).trim();
+            if (nextLine.startsWith("ELSE")) {
+                elseExists = true;
+            } else if (nextLine.startsWith("END IF")) {
+                foundEndIf = true;
+                break;
+            } else if (elseExists) {
+                elseBlock.add(nextLine);
+            } else {
+                thenBlock.add(nextLine);
+            }
+        }
+
+        if (!foundEndIf) {
+            throw new Exception("IF statement missing END IF: " + line);
+        }
+
+        // Execute the appropriate block based on the condition
+        if (evaluateCondition(condition)) {
+            parseAndExecute(thenBlock);
+        } else {
+            parseAndExecute(elseBlock);
+        }
+    }
