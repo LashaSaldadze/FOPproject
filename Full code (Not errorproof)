@@ -1,0 +1,383 @@
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.ArrayList;
+
+public class BasicInterpreter {
+    private static final Map<String, Double> variables = new HashMap<>();
+
+    public static void main(String[] args) {
+        // We added scanner to read the input from the user through the console
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter BASIC code line by line. Type \"FINISH\" in a new line to finish:");
+
+        //We created an empty ArrayList of strings which would accept the codes written by the user as input
+        List<String> codeLines = new ArrayList<>();
+        while (true) {
+            String line = scanner.nextLine().trim();
+            //The compiler keeps reading until the user inputs "FINISH"
+            if (line.equalsIgnoreCase("FINISH")) {
+                break;
+            }
+            //All the lines until "FINISH" are added to the codeLines Arraylist
+            codeLines.add(line);
+        }
+
+        // We added the method cleanedCode in order to get rid of the numbers in front of the code lines
+        try {
+            List<String> cleanedCode = cleanedCode(codeLines);
+            parseAndExecute(cleanedCode);
+
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // This method is used to clean the code by removing line numbers and trimming unnecessary spaces
+    public static List<String> cleanedCode(List<String> codeLines) {
+        List<String> cleanedCode = new ArrayList<>();
+
+        for (String line : codeLines) {
+            // Going through the lines with the for-each loop, the line.trim() method is used to trim the code
+            // And with the help of indexOf() method we find the the index of the first space
+            String trimmedLine = line.trim();
+            int firstSpaceIndex = trimmedLine.indexOf(" "); // Find the first space
+            if (firstSpaceIndex != -1 && Character.isDigit(trimmedLine.charAt(0))) {
+                // Remove first space and the the part before it if it starts with digits
+                cleanedCode.add(trimmedLine.substring(firstSpaceIndex + 1).trim());
+            } else {
+                // If no space or no leading digits, add the line as is
+                cleanedCode.add(trimmedLine);
+            }
+        }
+        return cleanedCode;
+    }
+
+    // The following keywords were added for the parseExecute method to catch, however, this code still may change in the future
+    private static void parseAndExecute(List<String> cleanedCode) throws Exception {
+        // We iterate through the list by using the for-each loop in order to catch the keywords and we added the appropriate methods for each keyword
+        // However, as of now, the methods only are added, not implemented
+        for (int i = 0; i < cleanedCode.size(); i++) {
+            String line = cleanedCode.get(i).trim();
+
+            if (line.contains("PRINT")) {
+                handlePrint(line);
+            } else if (line.contains("=") && !line.contains("FOR")) {
+                handleAssignment(line);
+            } else if (line.startsWith("IF")) {
+                handleIf(line, cleanedCode);
+            } else if (line.startsWith("WHILE")) {
+                handleWhile(line, cleanedCode);
+            } else if (line.startsWith("FOR")) {
+                handleFor(line, cleanedCode);
+                // Skip lines until NEXT to avoid reprocessing loop body
+                int skipIndex = i + 1;
+                while (skipIndex < cleanedCode.size() && !cleanedCode.get(skipIndex).trim().startsWith("NEXT")) {
+                    skipIndex++;
+                }
+                i = skipIndex;
+            } else if (line.startsWith("NEXT")) {
+                // NEXT is handled within handleFor, so it's ignored here
+                continue;
+            } else if (line.startsWith("END IF")) {
+                continue; // Same case with END IF, it's part of the IF statement
+            } else if (line.startsWith("WEND")) {
+                continue; //These are only added so the compiler doesn't stop reading these statements and throw an error for invalid statement
+            } else if (line.contains("THEN")) {
+                handleThen(line, cleanedCode);
+            } else {
+                throw new Exception("Unsupported or invalid statement: " + line);
+            }
+        }
+    }
+
+    // We added a separate helper method which evaluate different conditions such as A<>) or B>5 etc...
+    private static boolean evaluateCondition(String condition) throws Exception {
+        String[] parts;
+        // We added an array of string which holds the left and right part of teh condition
+        // Inside the condition.split() is the condition which needs interpreted and their respective meanings are returned in Java code
+        if (condition.contains("<") && condition.contains("=")) {
+            parts = condition.split("<=");
+            return getVariableValue(parts[0]) <= getVariableValue(parts[1]);
+        } else if (condition.contains(">") && condition.contains("=")) {
+            parts = condition.split(">=");
+            return getVariableValue(parts[0]) >= getVariableValue(parts[1]);
+        } else if (condition.contains("<") && condition.contains(">")) {
+            parts = condition.split("<>");
+            return getVariableValue(parts[0]) != getVariableValue(parts[1]);
+        }
+
+        // Handle single-character operators next
+        if (condition.contains(">") && !condition.contains("=") && !condition.contains("<")) {
+            parts = condition.split(">");
+            return getVariableValue(parts[0]) > getVariableValue(parts[1]);
+        } else if (condition.contains("<") && !condition.contains("=") && !condition.contains(">")) {
+            parts = condition.split("<");
+            return getVariableValue(parts[0]) < getVariableValue(parts[1]);
+        } else if (condition.contains("=") && !condition.contains(">") && !condition.contains("<")) {
+            parts = condition.split("=");
+            return getVariableValue(parts[0]) == getVariableValue(parts[1]);
+        }
+
+        throw new Exception("Unsupported condition: " + condition);
+    }
+
+    // This method does the same thing as evaluateCondition
+    // However these conditions return an actual arithmetic value and can't be added in the previous method as it is a boolean method
+    private static double evaluateArithmeticCondition(String condition) throws Exception {
+
+        // Ensure proper handling of conditions with mixed variables and numbers
+        condition = condition.trim();
+        if (variables.containsKey(condition)) {
+            return variables.get(condition);
+        }
+
+        try {
+            return Double.parseDouble(condition);
+        } catch (NumberFormatException ignored) {
+            // Continue to evaluate compound expressions
+        }
+
+        if (condition.contains("ABS(") && condition.endsWith(")")) {
+            String inner = condition.substring(4, condition.length() - 1).trim();
+            return Math.abs(evaluateArithmeticCondition(inner));
+        } else if (condition.contains("INT(") && condition.endsWith(")")) {
+            String inner = condition.substring(4, condition.length() - 1).trim();
+            return Math.floor(evaluateArithmeticCondition(inner));
+        }
+
+        String[] parts;
+        if (condition.contains("+")) {
+            parts = condition.split("\\+");
+            return (evaluateArithmeticCondition(parts[0].trim()) + evaluateArithmeticCondition(parts[1].trim()));
+        } else if (condition.contains("-")) {
+            parts = condition.split("-");
+            return evaluateArithmeticCondition(parts[0].trim()) - evaluateArithmeticCondition(parts[1].trim());
+        } else if (condition.contains("*")) {
+            parts = condition.split("\\*");
+            return (evaluateArithmeticCondition(parts[0].trim()) * evaluateArithmeticCondition(parts[1].trim()));
+        } else if (condition.contains("/")) {
+            parts = condition.split("/");
+            double denominator = evaluateArithmeticCondition(parts[1].trim());
+            // Here we check on the right side of the equation if the divisor is 0 and throw an exception
+            if (denominator == 0) {
+                throw new Exception("Division by zero");
+            }
+            return (double) (evaluateArithmeticCondition(parts[0].trim()) / evaluateArithmeticCondition(parts[1].trim()));
+        } else if (condition.contains("MOD")) {
+            parts = condition.split("MOD");
+            double dividend = evaluateArithmeticCondition(parts[0].trim());
+            double divisor = evaluateArithmeticCondition(parts[1].trim());
+
+            if (divisor == 0) {
+                throw new Exception("Division by zero in MOD operation");
+            }
+
+            // BASIC MOD behavior: Ensure remainder is non-negative
+            double result = dividend % divisor;
+            if (result < 0) {
+                result += Math.abs(divisor);
+            }
+
+            return result;
+        }
+        throw new Exception("Unsupported Condition: " + condition);
+    }
+
+    //This method was added to get the value of a variable or parse an integer directly
+    private static double getVariableValue(String variable) throws Exception {
+        // The trim method removes extra unnecessary spaces from the name or the value
+        variable = variable.trim();
+        if (variables.containsKey(variable)) {
+            // This part of the code means that if the variable exists in the map, return its value
+            return variables.get(variable);
+        } else {
+            try { // THis part tries to parse the variable as an integer if it's not in the map
+                return Double.parseDouble(variable);
+            } catch (NumberFormatException e) {
+                // This part throws an exception if the variable is not in the map nor is it a valid number
+                throw new Exception("Unknown variable or invalid number: " + variable);
+            }
+        }
+    }
+
+    // This is the placeholder method for handling "PRINT" statements
+    private static void handlePrint(String line) throws Exception {
+        String toPrint = line.substring(6).trim();
+        try {
+            if (variables.containsKey(toPrint)) {
+                System.out.println(variables.get(toPrint));
+            } else {
+                double result = evaluateArithmeticCondition(toPrint);
+                System.out.println(result);
+            }
+        } catch (Exception e) {
+            System.out.println("Error in Print statement: " + e.getMessage());
+        }
+    }
+    // This is the placeholder method for handling variable assignments
+    private static void handleAssignment(String line) throws Exception {
+        // Split the assignment statement into variable and value
+        String[] parts = line.split("=", 2);
+        if (parts.length != 2) {
+            throw new Exception("Invalid assignment statement: " + line);
+        }
+
+        // Extract the variable name and trim unnecessary spaces
+        String variable = parts[0].trim();
+
+        // Evaluate the right-hand side (value or expression)
+        double value = evaluateArithmeticCondition(parts[1].trim());
+
+        // Store the result in the variables map
+        variables.put(variable, value);
+    }
+    // This is the placeholder method for handling "IF" statements
+    private static void handleIf(String line, List<String> cleanedCode) throws Exception {
+        // The indexOfThen indicates the index of "THEN" keyword in the IF statement in order to to separate the condition and the action
+        int indexOfThen = line.indexOf("THEN");
+        // If the "THEN" keyword is missing, the statement is invalid
+        if (indexOfThen == -1) {
+            throw new Exception("Invalid If statement: " + line);
+        }
+        // This part extracts the condition (between "IF" and "THEN")
+        String condition = line.substring(2, indexOfThen).trim();
+
+        boolean conditionResult;
+        if (condition.contains("<") || condition.contains(">") || condition.contains("=")) {
+            conditionResult = evaluateCondition(condition); // Relational condition
+        } else {
+            conditionResult = evaluateArithmeticCondition(condition) != 0; // Non-zero means true
+        }
+
+        if (conditionResult) {
+            List<String> thenBlock = new ArrayList<>();
+            List<String> elseBlock = new ArrayList<>();
+            boolean elseExists = false;
+            boolean foundEndIf = false;
+
+            // Collect lines for THEN and ELSE blocks
+            int currentIndex = cleanedCode.indexOf(line);
+            for (int i = currentIndex + 1; i < cleanedCode.size(); i++) {
+                String nextLine = cleanedCode.get(i).trim();
+                if (nextLine.startsWith("ELSE")) {
+                    elseExists = true;
+                } else if (nextLine.startsWith("END IF")) {
+                    foundEndIf = true;
+                    break;
+                } else if (elseExists) {
+                    elseBlock.add(nextLine);
+                } else {
+                    thenBlock.add(nextLine);
+                }
+            }
+
+            if (!foundEndIf) {
+                throw new Exception("IF statement missing END IF: " + line);
+            }
+
+            // Execute the appropriate block based on the condition
+            if (evaluateCondition(condition)) {
+                parseAndExecute(thenBlock);
+            } else {
+                parseAndExecute(elseBlock);
+            }
+        }
+    }
+    // This is the placeholder method for handling "WHILE" loops
+    private static void handleWhile(String line, List<String> cleanedCode) throws Exception {
+        String condition = line.substring(line.indexOf("WHILE") + 5).trim();
+
+        List<String> loopBody = new ArrayList<>();
+        int currentIndex = cleanedCode.indexOf(line);
+        boolean foundWend = false;
+
+
+        for (int i = currentIndex + 1; i < cleanedCode.size(); i++) {
+            String nextLine = cleanedCode.get(i).trim();
+            if (nextLine.startsWith("WEND")) {
+                foundWend = true;
+                break;
+            }
+            loopBody.add(nextLine);
+        }
+        if (!foundWend) {
+            throw new Exception("WHILE loop is missing the WEND statement: " + line);
+        }
+
+        while (evaluateCondition(condition)) {
+            parseAndExecute(loopBody);
+        }
+    }
+    // This is the placeholder method for handling "FOR" loops
+    private static void handleFor(String line, List<String> cleanedCode) throws Exception {
+        // Extract variable, start, end, and optional step from the FOR statement
+        String forPart = line.substring(line.indexOf("FOR") + 3).trim();
+        String[] parts = forPart.split("=");
+        if (parts.length != 2) {
+            throw new Exception("Invalid FOR loop syntax: " + line);
+        }
+
+        String variable = parts[0].trim();
+        String rangePart = parts[1].trim();
+
+        String[] rangeComponents = rangePart.split("TO");
+        if (rangeComponents.length < 2) {
+            throw new Exception("FOR loop missing TO keyword: " + line);
+        }
+
+        double start = evaluateArithmeticCondition(rangeComponents[0].trim()); // The starter vaLue in the for loop
+        double end; // The final value in the for loop
+        double step = 1; // The change from one value to another in the for loop
+
+        // Check if STEP is included
+        String[] endAndStep = rangeComponents[1].split("STEP");
+        end = evaluateArithmeticCondition(endAndStep[0].trim());
+
+        if (endAndStep.length > 1) {
+            step = evaluateArithmeticCondition(endAndStep[1].trim());
+        }
+
+        // Ensure step is not zero to avoid infinite loops
+        if (step == 0) {
+            throw new Exception("FOR loop step cannot be zero: " + line);
+        }
+
+        // Store the loop variable and iterate
+        variables.put(variable, start);
+        List<String> loopBody = new ArrayList<>();
+        boolean foundNext = false;
+
+        int currentIndex = cleanedCode.indexOf(line);
+        for (int i = currentIndex + 1; i < cleanedCode.size(); i++) {
+            String nextLine = cleanedCode.get(i).trim();
+            if (nextLine.startsWith("NEXT")) {
+                foundNext = true;
+                break;
+            }
+            loopBody.add(nextLine);
+        }
+
+        if (!foundNext) {
+            throw new Exception("FOR loop missing NEXT keyword: " + line);
+        }
+
+        //Execute the loop
+        double currentValue = start;
+        while ((step > 0 && currentValue <= end) || (step < 0 && currentValue >= end)) {
+            variables.put(variable, currentValue); // Update the loop variable
+            parseAndExecute(loopBody);  // Execute the loop body
+            currentValue += step;
+        }
+    }
+
+    private static void handleThen(String condition, List<String> blockToExecute) throws Exception {
+        // Evaluate the condition
+        if (evaluateCondition(condition)) {
+            // If the condition is true, execute the block
+            parseAndExecute(blockToExecute);
+        }
+        // If the condition is false, do nothing (implicitly skip the block)
+    }
+}
