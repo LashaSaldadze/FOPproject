@@ -12,6 +12,8 @@ Our interpreter supports: variable assignment, arithmetic operations (+, -, *, /
 Instructions:
 Upon running the program, user will be greeted with the message "Enter BASIC code line by line. Type \"FINISH\" in a new line to finish:". After inputing the (valid) BASIC code in the console, the interpreter will look over and analyze it line by line, after which it will output the algorithm result. If the code inputed was invalid, the interpreter will be able to return correct error messages to the user. The code accepts inputs through the console, please input already finished code as editing the code after adding it to the console results in the compiler still working on the original input. The Basic algorithms will be uploaded on a seperate commit.
 
+We asked the professor and were told that we were allowed to work on just the main Branch and didn't need pull requests and all those other stuff that we don't know.
+
 Each member participated in adding commits and at least one commit per day was added like we were instructed to.
 
 We could've added the commits in the Git more effectively maybe, but we worked with whatever we knew, so here are the commits in order that they were uploaded.
